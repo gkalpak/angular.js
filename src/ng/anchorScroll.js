@@ -53,10 +53,21 @@
  */
 function $AnchorScrollProvider() {
 
+  var DEFAULT_OFFSET = 0;
+
   var autoScrollingEnabled = true;
+  var scrollOffsetGetter = function() { return DEFAULT_OFFSET; };
 
   this.disableAutoScrolling = function() {
     autoScrollingEnabled = false;
+  };
+
+  this.setScrollOffset = function(newScrollOffset) {
+    if (isFunction(newScrollOffset)) {
+      scrollOffsetGetter = function() { return newScrollOffset(); };
+    } else if (isNumber(newScrollOffset)) {
+      scrollOffsetGetter = function() { return newScrollOffset; };
+    }
   };
 
   this.$get = ['$window', '$location', '$rootScope', function($window, $location, $rootScope) {
@@ -74,20 +85,33 @@ function $AnchorScrollProvider() {
       return result;
     }
 
+    function scrollTo(elem) {
+      if (elem) {
+        elem.scrollIntoView();
+      } else {
+        $window.scrollTo(0, 0);
+      }
+
+      var offset = scrollOffsetGetter();
+      if (offset) {
+        $window.scrollBy(0, -1 * offset);
+      }
+    }
+
     function scroll() {
       var hash = $location.hash(), elm;
 
       // empty hash, scroll to the top of the page
-      if (!hash) $window.scrollTo(0, 0);
+      if (!hash) scrollTo(null);
 
       // element with given id
-      else if ((elm = document.getElementById(hash))) elm.scrollIntoView();
+      else if ((elm = document.getElementById(hash))) scrollTo(elm);
 
       // first anchor with given name :-D
-      else if ((elm = getFirstAnchor(document.getElementsByName(hash)))) elm.scrollIntoView();
+      else if ((elm = getFirstAnchor(document.getElementsByName(hash)))) scrollTo(elm);
 
       // no element and hash == 'top', scroll to the top of the page
-      else if (hash === 'top') $window.scrollTo(0, 0);
+      else if (hash === 'top') scrollTo(null);
     }
 
     // does not scroll when user clicks on anchor link that is currently on
@@ -102,4 +126,3 @@ function $AnchorScrollProvider() {
     return scroll;
   }];
 }
-
