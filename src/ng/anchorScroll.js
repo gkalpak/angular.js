@@ -61,15 +61,13 @@
  * @example
    <example module="anchorScrollOffsetExample">
      <file name="index.html">
-       <div class="scroll-area">
-         <div class="fixed-header" ng-controller="headerCtrl">
-           <a href="" ng-click="gotoAnchor(x)" ng-repeat="x in [1,2,3,4,5]">
-             Go to anchor {{x}}
-           </a>
-         </div>
-         <div id="anchor{{x}}" class="anchor" ng-repeat="x in [1,2,3,4,5]">
-           Anchor {{x}} of 5
-         </div>
+       <div class="fixed-header" ng-controller="headerCtrl">
+         <a href="" ng-click="gotoAnchor(x)" ng-repeat="x in [1,2,3,4,5]">
+           Go to anchor {{x}}
+         </a>
+       </div>
+       <div id="anchor{{x}}" class="anchor" ng-repeat="x in [1,2,3,4,5]">
+         Anchor {{x}} of 5
        </div>
      </file>
      <file name="script.js">
@@ -91,9 +89,13 @@
          ]);
      </file>
      <file name="style.css">
+       body {
+         padding-top: 50px;
+       }
+
        .anchor {
          border: 2px dashed DarkOrchid;
-         padding-bottom: 200px;
+         padding: 10px 10px 200px 10px;
        }
 
        .fixed-header {
@@ -106,12 +108,6 @@
        .fixed-header > a {
          display: inline-block;
          margin: 5px 15px;
-       }
-
-       .scroll-area {
-         height: 230px;
-         overflow: auto;
-         padding-top: 50px;
        }
      </file>
    </example>
