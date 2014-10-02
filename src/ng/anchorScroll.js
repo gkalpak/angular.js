@@ -16,6 +16,10 @@
  * It also watches the `$location.hash()` and scrolls whenever it changes to match any anchor.
  * This can be disabled by calling `$anchorScrollProvider.disableAutoScrolling()`.
  *
+ * Additionally, you can specify a scroll offset (in pixels) during the configuration phase by
+ * calling `$anchorScrollProvider.setScrollOffset(<valueOrGetter>)`. The offset can be either a
+ * fixed value or a getter function that returns a value dynamically.
+ *
  * @example
    <example module="anchorScrollExample">
      <file name="index.html">
@@ -50,8 +54,71 @@
        }
      </file>
    </example>
+ *
+ * <hr />
+ * The example below illustrates the use of scroll offset (specified as a fixed value).
+ *
+ * @example
+   <example module="anchorScrollOffsetExample">
+     <file name="index.html">
+       <div class="scroll-area">
+         <div class="fixed-header" ng-controller="headerCtrl">
+           <a href="" ng-click="gotoAnchor(x)" ng-repeat="x in [1,2,3,4,5]">
+             Go to anchor {{x}}
+           </a>
+         </div>
+         <div id="anchor{{x}}" class="anchor" ng-repeat="x in [1,2,3,4,5]">
+           Anchor {{x}} of 5
+         </div>
+       </div>
+     </file>
+     <file name="script.js">
+       angular.module('anchorScrollOffsetExample', [])
+         .config(['$anchorScrollProvider', function($anchorScrollProvider) {
+           $anchorScrollProvider.setScrollOffset(50);   // always scroll by 50 extra pixels
+         }])
+         .controller('headerCtrl', ['$anchorScroll', '$location', '$scope',
+           function ($anchorScroll, $location, $scope) {
+             $scope.gotoAnchor = function(x) {
+               // Set the location.hash to the id of
+               // the element you wish to scroll to.
+               $location.hash('anchor' + x);
+
+               // Call $anchorScroll()
+               $anchorScroll();
+             };
+           }
+         ]);
+     </file>
+     <file name="style.css">
+       .anchor {
+         border: 2px dashed DarkOrchid;
+         padding-bottom: 200px;
+       }
+
+       .fixed-header {
+         background-color: rgba(0, 0, 0, 0.2);
+         height: 50px;
+         position: fixed;
+         top: 0; left: 0; right: 0;
+       }
+
+       .fixed-header > a {
+         display: inline-block;
+         margin: 5px 15px;
+       }
+
+       .scroll-area {
+         height: 230px;
+         overflow: auto;
+         padding-top: 50px;
+       }
+     </file>
+   </example>
  */
 function $AnchorScrollProvider() {
+// TODO(gkalpak): The $anchorScrollProvider should be documented as well
+//                (under the providers section).
 
   var DEFAULT_OFFSET = 0;
 
@@ -88,13 +155,12 @@ function $AnchorScrollProvider() {
     function scrollTo(elem) {
       if (elem) {
         elem.scrollIntoView();
+        var offset = scrollOffsetGetter();
+        if (offset) {
+          $window.scrollBy(0, -1 * offset);
+        }
       } else {
         $window.scrollTo(0, 0);
-      }
-
-      var offset = scrollOffsetGetter();
-      if (offset) {
-        $window.scrollBy(0, -1 * offset);
       }
     }
 
