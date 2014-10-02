@@ -152,8 +152,9 @@ function $AnchorScrollProvider() {
       if (elem) {
         elem.scrollIntoView();
         var offset = scrollOffsetGetter();
-        if (offset) {
-          $window.scrollBy(0, -1 * offset);
+        var actualOffset = offset && (offset - (elem.offsetTop - document.body.scrollTop));
+        if (actualOffset) {
+          $window.scrollBy(0, -1 * actualOffset);
         }
       } else {
         $window.scrollTo(0, 0);
