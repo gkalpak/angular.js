@@ -417,7 +417,7 @@ angular.module('ngResource', ['ng']).
       }
     };
 
-    this.$get = ['$http', '$log', '$q', function($http, $log, $q) {
+    this.$get = ['$http', '$log', '$q', '$$HashMap', function($http, $log, $q, HashMap) {
 
       var noop = angular.noop,
         forEach = angular.forEach,
@@ -545,6 +545,7 @@ angular.module('ngResource', ['ng']).
 
       function resourceFactory(url, paramDefaults, actions, options) {
         var route = new Route(url, options);
+        var qTimeouts = new HashMap();
 
         actions = extend({}, provider.defaults.actions, actions);
 
@@ -567,6 +568,14 @@ angular.module('ngResource', ['ng']).
           shallowClearAndCopy(value || {}, this);
         }
 
+        Resource.cancelRequest = function(value) {
+          var qTimeout = qTimeouts.get(value);
+          if (qTimeout) {
+            qTimeout.resolve();
+            qTimeouts.remove(value);
+          }
+        };
+
         Resource.prototype.toJSON = function() {
           var data = extend({}, this);
           delete data.$promise;
@@ -587,14 +596,9 @@ angular.module('ngResource', ['ng']).
             delete action.timeout;
             hasTimeout = false;
           }
-          action.cancellable = hasTimeout ?
-              false : action.hasOwnProperty('cancellable') ?
-              action.cancellable : (options && options.hasOwnProperty('cancellable')) ?
-              options.cancellable :
-              provider.defaults.cancellable;
 
           Resource[name] = function(a1, a2, a3, a4) {
-            var params = {}, data, success, error;
+            var params = {}, data, success, error, qTimeout;
 
             /* jshint -W086 */ /* (purposefully fall through case statements) */
             switch (arguments.length) {
@@ -649,7 +653,6 @@ angular.module('ngResource', ['ng']).
                 case 'params':
                 case 'isArray':
                 case 'interceptor':
-                case 'cancellable':
                   break;
                 case 'timeout':
                   httpConfig[key] = value;
@@ -657,27 +660,21 @@ angular.module('ngResource', ['ng']).
               }
             });
 
-            if (!isInstanceCall) {
-              if (!action.cancellable) {
-                value.$cancelRequest = angular.noop;
-              } else {
-                var deferred = $q.defer();
-                httpConfig.timeout = deferred.promise;
-                value.$cancelRequest = deferred.resolve;
-              }
-            }
-
             if (hasBody) httpConfig.data = data;
             route.setUrlParams(httpConfig,
               extend({}, extractParams(data, action.params || {}), params),
               action.url);
 
-            var promise = $http(httpConfig).finally(function() {
-              if (value.$cancelRequest) value.$cancelRequest = angular.noop;
-            }).then(function(response) {
+            if (!isInstanceCall && !httpConfig.timeout) {
+              qTimeout = $q.defer();
+              httpConfig.timeout = qTimeout.promise;
+              qTimeouts.put(value, qTimeout);
+            }
+
+            var promise = $http(httpConfig).then(function(response) {
+
               var data = response.data,
-                promise = value.$promise,
-                cancelRequest = value.$cancelRequest;
+                promise = value.$promise;
 
               if (data) {
                 // Need to convert action.isArray to boolean in case it is undefined
@@ -707,7 +704,6 @@ angular.module('ngResource', ['ng']).
                 }
               }
 
-              value.$cancelRequest = cancelRequest;
               value.$resolved = true;
 
               response.resource = value;
@@ -719,6 +715,13 @@ angular.module('ngResource', ['ng']).
               (error || noop)(response);
 
               return $q.reject(response);
+            });
+
+            // The request has completed (either successfully or in error)
+            // Make sure that we cancel the timeout if there was one
+            promise.finally(function() {
+              if (qTimeout) qTimeout.reject();
+              qTimeouts.remove(value);
             });
 
             promise = promise.then(
