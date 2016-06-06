@@ -113,6 +113,7 @@
  *
  *
  * @example
+ * ### Ordering a table with ngRepeat
  * The example below demonstrates a simple {@link ngRepeat ngRepeat}, where the data is sorted by
  * age in descending order (expression is set to `'-age'`). The `comparator` is not set, which means
  * it defaults to the built-in comparator.
@@ -178,6 +179,7 @@
  * <hr />
  *
  * @example
+ * ### Changing the `expression` and `reverse` parameters dynamically
  * The `expression` and `reverse` parameters can be controlled dynamically through scope properties,
  * as shown in the next example.
  *
@@ -307,11 +309,11 @@
  * <hr />
  *
  * @example
+ * ### Using `orderBy` inside a controller
  * It's also possible to call the `orderBy` filter manually, by injecting `orderByFilter`, and
  * calling it with the desired parameters. (Alternatively, you could inject the `$filter` factory
  * and retrieve the `orderBy` filter with `$filter('orderBy')`.)
  *
- * Example:
  *
    <example name="orderBy-call-manually" module="orderByExample3">
      <file name="index.html">
@@ -441,6 +443,7 @@
  * <hr />
  *
  * @example
+ * ### Using a custom comparator
  * If you have very specific requirements about the way items are sorted, you can pass your own
  * comparator function. For example, you might need to compare some strings in a locale-sensitive
  * way. (When specifying a custom comparator, you also need to pass a value for the `reverse`
